@@ -15,31 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "books",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("title", sa.String(255), nullable=False),
-        sa.Column("author", sa.String(255), nullable=False),
-        sa.Column("isbn", sa.String(20), nullable=False, unique=True),
-        sa.Column("available", sa.Boolean, nullable=False, server_default=sa.true()),
-    )
-    op.create_table(
-        "members",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("email", sa.String(255), nullable=False, unique=True),
-    )
-    op.create_table(
-        "loans",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("book_id", sa.Integer, sa.ForeignKey("books.id"), nullable=False),
-        sa.Column("member_id", sa.Integer, sa.ForeignKey("members.id"), nullable=False),
-        sa.Column("borrowed_at", sa.DateTime, nullable=False),
-        sa.Column("returned_at", sa.DateTime, nullable=True),
-    )
+    op.create_index("ix_books_title", "books", ["title"])
+    op.create_index("ix_books_author", "books", ["author"])
 
 
 def downgrade() -> None:
-    op.drop_table("loans")
-    op.drop_table("members")
-    op.drop_table("books")
+    op.drop_index("ix_books_author", table_name="books")
+    op.drop_index("ix_books_title", table_name="books")
