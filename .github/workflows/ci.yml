@@ -1,0 +1,106 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies (uv, no pip)
+        run: uv sync --all-groups
+
+      - name: Lint with ruff
+        run: uv run ruff check .
+
+  qa-tests:
+    name: QA (migrations + tests + seed smoke check)
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: library
+          POSTGRES_PASSWORD: library
+          POSTGRES_DB: library
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U library" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies (uv, no pip)
+        run: uv sync --all-groups
+
+      - name: Run migrations against service Postgres
+        env:
+          DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
+        run: uv run alembic upgrade head
+
+      - name: Run automated test suite
+        env:
+          DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
+          REDIS_URL: redis://localhost:6379/0
+        run: uv run pytest -q
+
+      - name: Seed-data smoke check (CLI actually works end to end)
+        env:
+          DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          uv run library seed-data
+          uv run library list-books | grep -q "Dune" || (echo "seed data missing" && exit 1)
+
+  build-and-push:
+    needs: qa-tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/library-cli:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/library-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Extra work (stretch): pull + run on your own EC2 instance.
+      # That step is intentionally NOT automated in this workflow - do it
+      # manually on the instance so you control cost/uptime:
+      #   docker pull <dockerhub-user>/library-cli:latest
+      #   docker compose -f docker-compose.prod.yml up -d
