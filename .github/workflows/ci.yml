@@ -18,6 +18,8 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+
 
       - name: Install dependencies (uv, no pip)
         run: uv sync --all-groups
@@ -60,19 +62,19 @@ jobs:
           DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
         run: uv run alembic upgrade head
 
-      - name: Run automated test suite
-        env:
-          DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
-          REDIS_URL: redis://localhost:6379/0
-        run: uv run pytest -q
-
-      - name: Seed-data smoke check (CLI actually works end to end)
+        - name: Seed-data smoke check (CLI actually works end to end)
         env:
           DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
           REDIS_URL: redis://localhost:6379/0
         run: |
           uv run library seed-data
           uv run library list-books | grep -q "Dune" || (echo "seed data missing" && exit 1)
+          
+      - name: Run automated test suite
+        env:
+          DATABASE_URL: postgresql+psycopg://library:library@localhost:5432/library
+          REDIS_URL: redis://localhost:6379/0
+        run: uv run pytest -q
 
   build-and-push:
     needs: qa-tests
