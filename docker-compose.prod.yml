@@ -1,12 +1,3 @@
-# Used on the EC2 instance (the "extra work" stretch step).
-# Pulls the image CI already built and pushed to DockerHub instead of
-# rebuilding from source on the server.
-#
-# Usage on the instance:
-#   cp .env.example .env && edit it with real values
-#   docker compose -f docker-compose.prod.yml pull
-#   docker compose -f docker-compose.prod.yml run --rm app list-books
-
 services:
   db:
     image: postgres:16-alpine
@@ -23,6 +14,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    ports:
+      - "5432:5432"
     networks:
       - library-net
 
@@ -31,6 +24,8 @@ services:
     restart: unless-stopped
     volumes:
       - redisdata:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -39,9 +34,17 @@ services:
     networks:
       - library-net
 
-  app:
-    image: ${DOCKERHUB_USERNAME}/library-cli:latest
+  api:
+    image: ghcr.io/fizzaaliawan/lms/backend:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
     env_file: .env
+    environment:
+      - RUNNING_IN_DOCKER=1
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -49,8 +52,21 @@ services:
         condition: service_healthy
     networks:
       - library-net
-    entrypoint: ["library"]
-    command: ["--help"]
+    entrypoint: ["uvicorn"]
+    command: ["app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  frontend:
+    image: ghcr.io/fizzaaliawan/lms/frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    networks:
+      - library-net
 
 volumes:
   pgdata:
