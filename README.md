@@ -1,39 +1,77 @@
 # 📚 Library Management System (LMS)
-
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
-[![Vite](https://img.shields.io/badge/Vite-5+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
-
-A modern, production-grade **Library Management System** featuring a high-performance **FastAPI** backend with layered architecture, **PostgreSQL** relational database, **Redis** caching, automated background jobs, and a responsive **React** frontend with dual role-based portals (Librarian / Staff & Member).
+A modern, production-grade **Library Management System** built with a clean, layered architecture. It features a high-performance Python FastAPI backend, an interactive real-time React web application, a robust database layer (PostgreSQL & Redis), an asynchronous background worker system for overdue loan tracking, and a developer-friendly Command-Line Interface (CLI).
 
 ---
 
-## ✨ Key Features & Highlights
+## 📖 Project Explanation & Component Breakdown
 
-### 🎨 Modern & Responsive Frontend (React + Vite)
-- **Side-by-Side Dashboard Layout**: "Recommended for You" and "Quick Actions" side by side in a clean 2-column grid.
-- **Illustrated Vector Book Covers**: Procedural & handcrafted SVG artwork with 1:1.48 portrait book proportions (*Dune, Foundation, Neuromancer, 1984, Sapiens*, and dynamic procedural genres).
-- **Dual Role-Based Portals**:
-  - **Member Portal**: Search & filter catalog, self-reserve books, active loans tracker, reading history, and saved favorites.
-  - **Staff / Librarian Portal**: Complete catalog management (Add/Remove books), member registry, circulation control, active loan returns, and automated overdue reports.
-- **Centered Modal Dialogs**: Full-screen backdrop dialogs for book details, active loans, borrowing history, and favorites.
-- **Real-Time Live Notifications**: Server-Sent Events (SSE) notification bell for overdue alerts and return confirmations.
-- **Curated Design Palette**: Warm Cream (`#f7f3ea`), Navy (`#0b1a30`), clean white cards, and `Plus Jakarta Sans` typography.
+This Library Management System is built using a modern **monorepo architecture** where the frontend, backend, CLI, and database are structured to work together seamlessly. Below is an explanation of each component and how they interact:
 
-### ⚙️ Backend Architecture (FastAPI & Python 3.11+)
-- **Layered Clean Architecture**:
-  - `app/api/routes/`: REST endpoints for `auth`, `books`, `loans`, `members`, `notifications`, `sse`, and `jobs`.
-  - `app/models/`: SQLAlchemy 2.0 ORM models (`User`, `Book`, `Member`, `Loan`, `Notification`).
-  - `app/repositories/`: Clean Repository pattern for database queries.
-  - `app/services/`: Business logic layer with Redis caching.
-  - `app/core/security.py`: JWT authentication with bcrypt password hashing.
-  - `app/jobs.py`: Background job runner for automated overdue tracking.
-- **Database Migrations**: Alembic schema versioning with PostgreSQL 16.
-- **CLI Management**: Interactive and standalone Windows CLI (`run-cli.cmd`).
+### 1. Frontend Client (React & Vite)
+*   **Role**: The client-side web application interface.
+*   **Technology**: React 18+, Vite (as build tool/bundler), Vanilla CSS design tokens with Glassmorphism, and SVG vector art rendering.
+*   **Purpose**: Provides an interactive dashboard for members and librarians. It includes a **side-by-side layout** ("Recommended for You" & "Quick Actions"), **handcrafted vector illustrated book covers** (1:1.48 portrait proportions), full-screen centered modal dialogs for active loans, borrowing history, and saved favorites, and a real-time Server-Sent Events (SSE) notification bell.
+
+### 2. Backend Server (FastAPI)
+*   **Role**: The central coordinator and data provider.
+*   **Technology**: FastAPI (Python 3.11+), SQLAlchemy 2.0 (ORM), and Pydantic v2 (data modeling and schema validation).
+*   **Purpose**: Exposes a secure, high-performance RESTful API. It processes incoming requests from the React frontend and CLI client, handles user authentication/authorization (JWT tokens via `python-jose` and `bcrypt`), performs business logic validations, and executes transactions on the database.
+
+### 3. Database Layer (PostgreSQL & Alembic)
+*   **Role**: Persistent relational data storage.
+*   **Technology**: PostgreSQL 16.
+*   **Purpose**: Stores structured records for books, users, library members, active/completed loans, and notification logs.
+*   **Migrations**: **Alembic** manages version-controlled schema changes under `database/migrations/`, allowing developers to upgrade or downgrade the database layout predictably.
+
+### 4. Background Processing & Caching (Redis & Background Jobs)
+*   **Role**: Asynchronous job worker system and in-memory cache.
+*   **Technology**: Redis 7 and asynchronous Python background worker (`backend/app/jobs.py`).
+*   **Purpose**: Handles long-running or recurring tasks off the main thread. For example, automatically scanning and updating overdue book statuses, generating circulation reports, and caching catalog queries for sub-millisecond retrieval.
+
+### 5. Command Line Interface (CLI)
+*   **Role**: A lightweight administrative terminal client.
+*   **Technology**: Click (Python CLI framework) and interactive menu launcher (`run-cli.cmd`).
+*   **Purpose**: Allows developers and administrators to bypass the browser and run database commands directly from the terminal (e.g., adding new books, listing members, or managing circulation).
+
+### 6. Containerization & CI/CD
+*   **Role**: Standardized environments and automated deployment.
+*   **Technology**: Docker, Docker Compose, and GitHub Actions (`.github/workflows/ci.yml`, `cd.yml`).
+*   **Purpose**: Multi-stage Dockerfiles guarantee identical environments in development and production. The GitHub Actions workflow automates code style checks, runs testing suites (pytest), builds the frontend, and publishes production-ready containers to the GitHub Container Registry (GHCR).
+
+---
+
+## 🎯 Project Development Milestones
+
+This repository houses a complete, multi-tiered Library Management System built and tested across progressive development milestones:
+
+### 📅 Technical Milestones
+
+#### Phase 1: CLI System, Database & Container Foundations
+*   **Git & CI/CD Foundations**: Repository initialized with GitHub Actions workflow to run automated test suites (pytest) and image publication to GHCR.
+*   **Docker & Containerization**: Multi-container setup orchestrating the application services alongside persistent PostgreSQL and Redis databases.
+*   **Databases & ORM Integration**: Relational database schema (Books, Members, Loans, Users, Notifications) defined and managed via Alembic migrations, with database access wired to the CLI via SQLAlchemy ORM.
+*   **CLI Application**: A terminal-based interface supporting full catalog searches, member registration, and book borrowing/return flows.
+
+#### Phase 2: REST API, Authentication, Background Queue & Modern Web UI
+*   **FastAPI REST Backend**: High-performance HTTP server exposing structured CRUD endpoints for all library models, complete with auto-generated OpenAPI (`/docs`) interactive documentation.
+*   **Authentication & Role Authorization**: Secure signup/login system utilizing JWT tokens with role-based access controls (differentiating between Members and Librarians).
+*   **Background Worker System**: Real-time caching and automated overdue loan detection powered by Redis.
+*   **React Frontend Client**: Single-page browser interface built using React and Vite, featuring a Warm Cream & Navy design palette, side-by-side dashboard, illustrated vector covers, centered modals, and SSE live alerts.
+
+---
+
+## 🛠️ Architecture & Technology Stack
+
+The application is split into specialized layers inside a monorepo setup:
+
+```mermaid
+graph TD
+    Client[Web Browser / CLI] -->|HTTP / JSON / SSE| Backend[FastAPI Backend]
+    Backend -->|SQLAlchemy ORM| DB[(PostgreSQL 16)]
+    Backend -->|Cache & Queue| Broker[(Redis 7)]
+    Worker[Background Jobs Worker] -->|Fetch Overdue / Reports| Broker
+    Worker -->|Read/Write| DB
+```
 
 ---
 
@@ -76,41 +114,52 @@ LMS/
 
 ---
 
-## 🚀 Quickstart & Local Development
+## 🚀 How to Run the Project
 
-### Prerequisites
-- [Docker & Docker Compose](https://www.docker.com/) OR
-- [Python 3.11+](https://www.python.org/) and [Node.js 20+](https://nodejs.org/)
+You can run this project in two ways: using **Docker Compose** (recommended for quick setup) or by **running components locally** (recommended for active development).
 
-### 1. Run Everything with Docker Compose (Recommended)
-```bash
-# Start PostgreSQL, Redis, Backend API, and Frontend in one command
-docker compose up --build
-```
-- **Frontend**: [http://localhost:5173](http://localhost:5173)
-- **API Documentation (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+### Method 1: Running with Docker Compose (Quick Setup)
+
+This is the easiest way to launch the entire stack (PostgreSQL, Redis, Backend API, and Frontend).
+
+1.  **Prerequisites**: Ensure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+2.  **Start Services**: Run the following command in the root folder of the project:
+    ```bash
+    docker compose up --build
+    ```
+3.  **Access the Applications**:
+    *   **Frontend Client**: [http://localhost:5173](http://localhost:5173)
+    *   **Backend REST API**: [http://localhost:8000](http://localhost:8000)
+    *   **Interactive API Docs (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-### 2. Run Manually (Local Dev)
+### Method 2: Running Locally (Manual Setup)
 
-#### A. Backend
+Use this method if you plan to write code and want fast live-reloads without rebuilding containers.
+
+#### 1. Setup Backend Dependencies & Migrations
+Ensure you have **Python 3.11+** installed. Make sure you also have PostgreSQL and Redis running locally.
+
 ```bash
+# Navigate to backend and install dependencies
 cd backend
-# Create virtual environment and install dependencies
 uv sync || pip install -e .
-# Start FastAPI backend
-uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Start the FastAPI development server
+uvicorn app.api.main:app --reload --port 8000
 ```
 
-#### B. Frontend
+#### 2. Run the React Frontend
+Ensure you have **Node.js 20+** installed.
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-#### C. Windows CLI
+#### 3. Run the Windows CLI
 ```cmd
 # Launch interactive menu
 run-cli.cmd menu
@@ -124,17 +173,14 @@ run-cli.cmd add-book --title "Dune" --author "Frank Herbert" --isbn 978044101359
 
 ## 🌐 Remote Deployment & Cloud Setup
 
-### 1. Deploy on Remote Cloud Server (AWS EC2 / VPS / DigitalOcean)
-
-On your remote server:
+### Deploy on Remote Server (AWS EC2 / VPS / DigitalOcean)
 ```bash
-# 1. Clone repository
-git clone https://github.com/fizzaaliawan/LMS.git
-cd LMS
+# 1. Clone your repository
+git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
+cd <YOUR_REPO>
 
 # 2. Setup environment configuration
 cp .env.example .env
-# Edit .env with your secrets if needed (nano .env)
 
 # 3. Launch production containers
 docker compose -f docker-compose.prod.yml up -d --build
@@ -144,23 +190,16 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ---
 
-### 2. Mobile & LAN Access
+## 🛡️ CI/CD Pipeline Configuration
 
-The frontend is pre-configured with `host: "0.0.0.0"`.
-1. Find your machine's local IP address (`ipconfig` on Windows, e.g. `192.168.1.15`).
-2. Open `http://192.168.1.15:5173` in any mobile phone, tablet, or laptop connected to the same Wi-Fi.
+Our **GitHub Actions Pipeline** (`.github/workflows/ci.yml` & `cd.yml`) executes automatically on every `push` or `pull_request` to `main` and `staging` branches:
 
----
-
-## 🧪 Testing
-
-Run backend test suite with pytest:
-```bash
-cd backend
-pytest
-```
+1.  **Dependency Verification**: Validates dependencies and environment sync.
+2.  **Automated Unit Tests**: Runs pytest suite across backend routes, authentication, and background jobs.
+3.  **Frontend Build Check**: Validates and builds the React frontend production bundle.
+4.  **Docker Deployments**: Builds production Docker images and publishes them automatically to the **GitHub Container Registry (GHCR)**.
 
 ---
 
-## 📜 License
-This project is open-source and available under the [MIT License](LICENSE).
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
